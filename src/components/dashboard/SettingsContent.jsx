@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Bell, Shield, Lock, LogOut, ChevronRight, Moon, Eye, Smartphone } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Bell, Shield, RotateCcw, LogOut, ChevronRight, Moon, Eye, Smartphone } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useStore, currentUser, updateSettings, resetDemoData } from '../../lib/store';
+import { hasSupabase } from '../../lib/supabaseClient';
 
 const Toggle = ({ enabled, setEnabled, icon: Icon, title, desc }) => (
   <div className="flex items-center justify-between p-8 border-b border-gray-50 dark:border-slate-800/50 hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors">
@@ -29,8 +31,13 @@ const Toggle = ({ enabled, setEnabled, icon: Icon, title, desc }) => (
 );
 
 const SettingsContent = ({ onLogout, isDarkMode, setIsDarkMode }) => {
-  const [notifications, setNotifications] = useState(true);
-  const [anonymous, setAnonymous] = useState(false);
+  const user = useStore(currentUser);
+  const notifications = user?.settings?.notifications ?? true;
+  const anonymous = user?.settings?.anonymous ?? false;
+  const setNotifications = (v) => updateSettings({ notifications: v });
+  const setAnonymous = (v) => updateSettings({ anonymous: v });
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
 
   return (
     <div className="flex flex-col h-full px-4 md:px-0 max-w-4xl mx-auto pb-24">
@@ -72,23 +79,40 @@ const SettingsContent = ({ onLogout, isDarkMode, setIsDarkMode }) => {
         <section className="space-y-6">
           <h3 className="font-black text-blue-950 dark:text-white text-xs uppercase tracking-[0.2em] ml-2">Security & Identity</h3>
           <div className="bg-white dark:bg-slate-900 rounded-[3rem] shadow-sm border border-gray-50 dark:border-slate-800 overflow-hidden">
-            <button className="w-full flex items-center justify-between p-8 border-b border-gray-50 dark:border-slate-800/50 hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-all text-left group">
-              <div className="flex items-center space-x-5">
-                <div className="w-12 h-12 bg-gray-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all">
-                  <Lock className="w-6 h-6" />
-                </div>
-                <span className="font-black text-blue-950 dark:text-white text-lg tracking-tight">Access Control</span>
-              </div>
-              <ChevronRight className="w-6 h-6 text-gray-300 dark:text-slate-600 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button className="w-full flex items-center justify-between p-8 border-b border-gray-50 dark:border-slate-800/50 hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-all text-left group">
+            <button onClick={() => setShowPrivacy(!showPrivacy)} aria-expanded={showPrivacy} className="w-full flex items-center justify-between p-8 border-b border-gray-50 dark:border-slate-800/50 hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-all text-left group">
               <div className="flex items-center space-x-5">
                 <div className="w-12 h-12 bg-gray-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all">
                   <Shield className="w-6 h-6" />
                 </div>
                 <span className="font-black text-blue-950 dark:text-white text-lg tracking-tight">Data & Privacy</span>
               </div>
-              <ChevronRight className="w-6 h-6 text-gray-300 dark:text-slate-600 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className={`w-6 h-6 text-gray-300 dark:text-slate-600 transition-transform ${showPrivacy ? 'rotate-90' : ''}`} />
+            </button>
+            <AnimatePresence>
+              {showPrivacy && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-gray-50 dark:border-slate-800/50">
+                  <p className="px-8 py-6 text-sm font-medium text-gray-500 dark:text-slate-400 leading-relaxed">
+                    {hasSupabase
+                      ? 'Your account is stored on this device. Reports and SOS alerts are also saved to the SafeWatch database so neighbors can see them.'
+                      : 'This demo keeps your account, reports and SOS alerts in this browser only. Nothing is sent to a server, and clearing your browser data removes it.'}
+                    {' '}With Ghost Reporting on, your name is never shown on reports.
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <button
+              onClick={() => { resetDemoData(); setResetDone(true); setTimeout(() => setResetDone(false), 2500); }}
+              className="w-full flex items-center justify-between p-8 border-b border-gray-50 dark:border-slate-800/50 hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-all text-left group"
+            >
+              <div className="flex items-center space-x-5">
+                <div className="w-12 h-12 bg-gray-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all">
+                  <RotateCcw className="w-6 h-6" />
+                </div>
+                <span>
+                  <span className="block font-black text-blue-950 dark:text-white text-lg tracking-tight">Reset demo data</span>
+                  <span className="block text-gray-400 dark:text-slate-500 font-medium text-xs uppercase tracking-widest">{resetDone ? 'Done: sample reports restored' : 'Restore the sample reports'}</span>
+                </span>
+              </div>
             </button>
             <button onClick={onLogout} className="w-full flex items-center justify-between p-8 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all text-left group">
               <div className="flex items-center space-x-5 text-red-600 dark:text-red-400">
@@ -104,7 +128,7 @@ const SettingsContent = ({ onLogout, isDarkMode, setIsDarkMode }) => {
         {/* Device Info */}
         <div className="flex items-center justify-center p-10 flex-col space-y-4">
            <Smartphone className="w-8 h-8 text-gray-200 dark:text-slate-800" />
-           <p className="text-[10px] font-black text-gray-300 dark:text-slate-700 uppercase tracking-[0.3em]">VERSION 1.0.4-BETA • KATAPATAN SAFEWATCH</p>
+           <p className="text-[10px] font-black text-gray-300 dark:text-slate-700 uppercase tracking-[0.3em]">VERSION 1.1.0 • KATAPATAN SAFEWATCH</p>
         </div>
       </div>
     </div>

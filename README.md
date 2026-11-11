@@ -1,16 +1,31 @@
-# React + Vite
+# Katapatan SafeWatch
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A community safety app for Katapatan Homes, Barangay Banaybanay, Cabuyao. Residents report incidents, see them on a live map, and send an SOS with one press.
 
-Currently, two official plugins are available:
+**Live demo:** https://pauljohnnn.github.io/KATAPATAN_SAFEWATCH/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Press **Launch App**, then **Try the demo resident account**, or create your own account.
 
-## React Compiler
+## What works
+- **Accounts**: sign up, log in, log out. You stay logged in after a refresh.
+- **Incident reports**: file a report (pinned to your location if you allow it), search, filter by open, resolved or your own, confirm a neighbor's report, and mark your own as resolved.
+- **Live community map**: color-coded pins for every report, active SOS alerts and safe zones. "View on map" flies to the pin.
+- **SOS**: press and hold for one second, so it can't go off by accident. It pins your location and shows hotlines and your emergency contacts to call.
+- **Profile**: edit your details and manage emergency contacts.
+- **Settings**: dark mode, Ghost Reporting (hides your name on reports) and a reset for the sample data.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## How data is stored
+By default everything is kept in the browser (localStorage), so the demo works for anyone with no server. To share reports and SOS alerts between all residents, create a Supabase project, run `supabase_setup.sql`, and build with:
 
-## Expanding the ESLint configuration
+```
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Run it locally
+```
+npm install
+npm run dev
+```
+
+Built with React 19, Vite, Tailwind CSS 4, Framer Motion and Leaflet (OpenStreetMap).

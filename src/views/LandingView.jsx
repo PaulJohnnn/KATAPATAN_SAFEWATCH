@@ -52,6 +52,13 @@ const LandingView = ({ onNavigate }) => {
           >
             Launch App <ArrowRight className="ml-2 w-5 h-5" />
           </motion.button>
+          <motion.p variants={itemVariants} className="text-sm text-gray-500 dark:text-slate-400 font-medium">
+            New here?{' '}
+            <button onClick={() => onNavigate('signup')} className="text-blue-600 dark:text-blue-400 font-bold hover:underline">
+              Create a free account
+            </button>{' '}
+            or try the demo resident account.
+          </motion.p>
         </motion.div>
 
         <motion.div 
@@ -94,16 +101,16 @@ const LandingView = ({ onNavigate }) => {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {[
-              { icon: ShieldCheck, title: "1-Tap SOS", color: "red", desc: "Instantly alert your neighborhood and local authorities with a single tap in emergencies." },
-              { icon: EyeOff, title: "Hide Identities", color: "blue", desc: "Report suspicious activities entirely anonymously. Your safety and privacy remain our top priority." },
-              { icon: Bell, title: "Local Barangay Alerts", color: "orange", desc: "Receive verified, hyper-local alerts directly from your barangay officials in real-time." }
+              { icon: ShieldCheck, title: "1-Tap SOS", tone: "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400", desc: "Instantly alert your neighborhood and local authorities with a single tap in emergencies." },
+              { icon: EyeOff, title: "Hide Identities", tone: "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400", desc: "Report suspicious activities entirely anonymously. Your safety and privacy remain our top priority." },
+              { icon: Bell, title: "Local Barangay Alerts", tone: "bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400", desc: "Receive verified, hyper-local alerts directly from your barangay officials in real-time." }
             ].map((feature, i) => (
               <motion.div 
                 key={i}
                 whileHover={{ y: -10 }}
                 className="flex flex-col items-center text-center p-8 rounded-[2.5rem] bg-gray-50 dark:bg-slate-900 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-sm hover:shadow-xl border border-transparent hover:border-gray-100 dark:hover:border-slate-700 group"
               >
-                <div className={`w-16 h-16 bg-${feature.color}-100 dark:bg-${feature.color}-900/20 text-${feature.color}-600 dark:text-${feature.color}-400 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform`}>
+                <div className={`w-16 h-16 ${feature.tone} rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform`}>
                   <feature.icon className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-bold text-blue-950 dark:text-blue-100 mb-4">{feature.title}</h3>
