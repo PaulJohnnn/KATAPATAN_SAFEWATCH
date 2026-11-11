@@ -3,61 +3,44 @@ import LandingView from './views/LandingView';
 import LoginView from './views/LoginView';
 import DashboardView from './views/DashboardView';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useStore, currentUser, signOut, updateSettings } from './lib/store';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('landing');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const user = useStore(currentUser);
+  const [view, setView] = useState(user ? 'dashboard' : 'landing');
+  const isDarkMode = Boolean(user?.settings?.dark);
+  const setIsDarkMode = (dark) => updateSettings({ dark });
 
-  console.log('App.jsx: Current View:', currentView);
+  // The session decides: logged in always shows the dashboard, logged out never does
+  const shown = user ? 'dashboard' : view === 'dashboard' ? 'landing' : view;
 
-  // Sync dark mode class with state
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', isDarkMode);
   }, [isDarkMode]);
+
+  const navigate = (next) => setView(next === 'dashboard' && !user ? 'login' : next);
 
   return (
     <div className={`min-h-screen w-full bg-white dark:bg-slate-950 transition-colors duration-500 overflow-x-hidden ${isDarkMode ? 'dark' : ''}`}>
       <AnimatePresence mode="wait">
-        {currentView === 'landing' && (
-          <motion.div
-            key="landing"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <LandingView onNavigate={setCurrentView} />
+        {shown === 'landing' && (
+          <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
+            <LandingView onNavigate={navigate} />
           </motion.div>
         )}
 
-        {currentView === 'login' && (
-          <motion.div
-            key="login"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 0.4 }}
-          >
-            <LoginView onNavigate={setCurrentView} />
+        {(shown === 'login' || shown === 'signup') && (
+          <motion.div key="login" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.4 }}>
+            <LoginView mode={shown} onNavigate={setView} />
           </motion.div>
         )}
 
-        {currentView !== 'landing' && currentView !== 'login' && (
-          <motion.div
-            key="dashboard"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <DashboardView 
-              onLogout={() => setCurrentView('landing')} 
-              isDarkMode={isDarkMode} 
-              setIsDarkMode={setIsDarkMode} 
+        {shown === 'dashboard' && (
+          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>
+            <DashboardView
+              onLogout={() => { signOut(); setView('landing'); }}
+              isDarkMode={isDarkMode}
+              setIsDarkMode={setIsDarkMode}
             />
           </motion.div>
         )}

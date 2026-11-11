@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Home, FileText, Map as MapIcon, User, Settings, Loader2 } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { Shield, Home, FileText, Map as MapIcon, User, Settings } from 'lucide-react';
+import { useStore, currentUser, refreshReports, initials } from '../lib/store';
 import HomeContent from '../components/dashboard/HomeContent';
 import ReportsContent from '../components/dashboard/ReportsContent';
 import MapContent from '../components/dashboard/MapContent';
@@ -9,60 +9,26 @@ import SettingsContent from '../components/dashboard/SettingsContent';
 
 const DashboardView = ({ onLogout, isDarkMode, setIsDarkMode }) => {
   const [activeTab, setActiveTab] = useState('home');
-  const [sosState, setSosState] = useState('idle');
-  const [isLoading, setIsLoading] = useState(true);
-  const [reports, setReports] = useState([]);
+  const [focusId, setFocusId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const user = useStore(currentUser);
 
   const fetchReports = async () => {
     setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setReports(data);
-      } else {
-        setReports([
-          { id: 1, type: "Theft", color: "orange", title: "Stolen Bicycle - Main Gate, Katapatan Homes", time: "2 hours ago", desc: "A red mountain bike was taken from the front porch at around 2 PM. Please be on the lookout.", lat: 14.2468, lng: 121.1352 },
-          { id: 2, type: "Vandalism", color: "blue", title: "Graffiti on Park Wall - Barangay Hall, Banaybanay", time: "5 hours ago", desc: "Someone spray painted the new retaining wall at the community park last night.", lat: 14.2455, lng: 121.1360 },
-          { id: 3, type: "Hazard", color: "red", title: "Fallen Tree Branch - Basketball Court, Katapatan Homes", time: "1 day ago", desc: "Large branch blocking the southbound lane. Drive carefully.", lat: 14.2470, lng: 121.1345 }
-        ]);
-      }
-    } catch (err) {
-      console.error('Error fetching reports:', err);
-      // Fallback
-      setReports([
-        { id: 1, type: "Theft", color: "orange", title: "Stolen Bicycle - Main Gate, Katapatan Homes", time: "2 hours ago", desc: "A red mountain bike was taken from the front porch at around 2 PM. Please be on the lookout.", lat: 14.2468, lng: 121.1352 },
-        { id: 2, type: "Vandalism", color: "blue", title: "Graffiti on Park Wall - Barangay Hall, Banaybanay", time: "5 hours ago", desc: "Someone spray painted the new retaining wall at the community park last night.", lat: 14.2455, lng: 121.1360 },
-        { id: 3, type: "Hazard", color: "red", title: "Fallen Tree Branch - Basketball Court, Katapatan Homes", time: "1 day ago", desc: "Large branch blocking the southbound lane. Drive carefully.", lat: 14.2470, lng: 121.1345 }
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
+    await refreshReports();
+    setIsLoading(false);
   };
 
-  // Fetch reports on mount
-  useEffect(() => {
-    fetchReports();
-  }, []);
+  useEffect(() => { fetchReports(); }, []);
 
-  const handleSosClick = () => {
-    if (sosState !== 'idle') return;
-    setSosState('sending');
-    setTimeout(() => {
-      setSosState('success');
-    }, 2000);
-  };
+  // "View on map" from a report card
+  const showOnMap = (id) => { setFocusId(id); setActiveTab('map'); };
 
   const NavItem = ({ id, icon: Icon, label }) => {
     const isActive = activeTab === id;
     return (
       <button
-        onClick={() => setActiveTab(id)}
+        onClick={() => { setActiveTab(id); if (id !== 'map') setFocusId(null); }}
         className={`flex md:flex-row flex-col items-center md:justify-start justify-center w-full space-y-1 md:space-y-0 md:space-x-4 md:px-6 md:py-4 py-2 rounded-2xl transition-all duration-300 group
           ${isActive 
             ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 dark:shadow-blue-900/40 translate-x-1' 
@@ -76,18 +42,16 @@ const DashboardView = ({ onLogout, isDarkMode, setIsDarkMode }) => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'home':
-        return <HomeContent sosState={sosState} setSosState={setSosState} handleSosClick={handleSosClick} onNavigateTab={setActiveTab} />;
       case 'reports':
-        return <ReportsContent reports={reports} setReports={setReports} />;
+        return <ReportsContent onShowOnMap={showOnMap} />;
       case 'map':
-        return <MapContent reports={reports} isDarkMode={isDarkMode} onRefresh={fetchReports} isLoading={isLoading} />;
+        return <MapContent focusId={focusId} onRefresh={fetchReports} isLoading={isLoading} />;
       case 'profile':
         return <ProfileContent />;
       case 'settings':
         return <SettingsContent onLogout={onLogout} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />;
       default:
-        return <HomeContent sosState={sosState} setSosState={setSosState} handleSosClick={handleSosClick} onNavigateTab={setActiveTab} />;
+        return <HomeContent onNavigateTab={setActiveTab} onShowOnMap={showOnMap} />;
     }
   };
 
@@ -111,9 +75,9 @@ const DashboardView = ({ onLogout, isDarkMode, setIsDarkMode }) => {
 
         <div className="p-8 border-t border-gray-50 dark:border-slate-800/50">
           <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">JD</div>
+            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">{initials(user?.fullName)}</div>
             <div>
-              <p className="text-xs font-black text-gray-800 dark:text-white leading-none">Jenica Dematera</p>
+              <p className="text-xs font-black text-gray-800 dark:text-white leading-none">{user?.fullName}</p>
               <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">Resident</p>
             </div>
           </div>
